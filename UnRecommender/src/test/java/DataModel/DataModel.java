@@ -18,7 +18,7 @@ import Tool.DataSource;
  *
  */
 
-public class DataModelfor{
+public class DataModel{
 
 	private HashMap<Long,ArrayList<LongPair>> Users_BuyListHashMap;
 	private HashMap<String, Long> User_ID2UserMap,Item_ID2ItemMap;  
@@ -28,7 +28,7 @@ public class DataModelfor{
 	/**
 	 * 初始�?
 	 */
-	public DataModelfor(HashMap<String, Double> map){
+	public DataModel(HashMap<String, Double> map){
 		User_ID2UserMap = new HashMap<String, Long>(); //用户ID--用户重编�?的键值对
 		Item_ID2ItemMap = new HashMap<String, Long>(); //物品ID--物品重编�?的键值对
 		User2User_IDMap = new HashMap<Long, String>(); //用户重编�?-用户ID 的键值对
