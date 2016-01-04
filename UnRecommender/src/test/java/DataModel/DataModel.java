@@ -87,7 +87,6 @@ public class DataModel{
 		try{
 			Connection conn = getConn();		
 			Statement stmt = conn.createStatement();
-			//String sql ="SELECT t1.USERID,t1.StoreID,UNIX_TIMESTAMP(t1.Time),t1.MCC  FROM data_train t1,kmeans_rfm t2 WHERE t1.USERID = t2.USERID AND (t2.TYPE=6) ORDER BY t1.USERID,t1.Time";
 			String sql ="SELECT t1.USERID,t1.StoreID,UNIX_TIMESTAMP(t1.Time),t1.MCC,t1.Money  FROM data_train t1 ORDER BY t1.USERID,t1.Time";
 			ResultSet rs = stmt.executeQuery(sql);//创建数据对象	   
 			long userID,itemID;

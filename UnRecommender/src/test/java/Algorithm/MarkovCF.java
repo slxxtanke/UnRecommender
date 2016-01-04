@@ -138,7 +138,38 @@ public class MarkovCF {
 	}
 	
 	public ArrayList<Long> recommender(String userID, int length){
-		return null;
+		ArrayList<LongPair> list = (ArrayList<LongPair>) dataModel.getUserHistoryWithTime(dataModel.getUserHashID(userID));
+		if (list.size()<1){
+			return new ArrayList<Long>();
+		}else{
+			ItemWeightList recomList = new ItemWeightList();
+			int k=-1;
+			for (int j=list.size()-1;j>0;j--){
+				k =j-1;
+				LongPair startPair = list.get(j);
+				String mcc = startPair.getMcc();
+				boolean flag = true;
+				do{
+					if (k<0){
+						break;
+					}
+					LongPair endPair = list.get(k);
+					if (mcc.equals(endPair.getMcc())){
+						flag = false;
+					}
+					k--;
+				}while (flag);
+			}
+			k++;
+			for (int j =list.size()-1;j>=k;j--){
+				long storeID = list.get(j).getItem();
+				if (martix.containsKey(storeID)){
+					List<SimilarityItem> similarity = martix.get(storeID).getList();
+					recomList.mergeList(similarity);
+				}
+			}
+			return recomList.toRecommendList(length);
+		}
 	}
 	
 	public void DataOut(){
