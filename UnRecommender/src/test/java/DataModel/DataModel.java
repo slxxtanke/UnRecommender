@@ -23,18 +23,19 @@ public class DataModel{
 	private HashMap<Long,ArrayList<LongPair>> Users_BuyListHashMap;
 	private HashMap<String, Long> User_ID2UserMap,Item_ID2ItemMap;  
 	private HashMap<Long, String> User2User_IDMap,Item2Item_IDMap;
-	private HashMap<String, Double> UserWeight;
+	//private HashMap<String, Double> UserWeight;
+	private HashMap<String, Double> StoreWeight;
 	
 	/**
 	 * 初始�?
 	 */
-	public DataModel(HashMap<String, Double> map){
+	public DataModel(){
 		User_ID2UserMap = new HashMap<String, Long>(); //用户ID--用户重编�?的键值对
 		Item_ID2ItemMap = new HashMap<String, Long>(); //物品ID--物品重编�?的键值对
 		User2User_IDMap = new HashMap<Long, String>(); //用户重编�?-用户ID 的键值对
 		Item2Item_IDMap = new HashMap<Long, String>(); //物品重编�?-物品ID 的键值对
 		Users_BuyListHashMap = new HashMap<Long,ArrayList<LongPair>>(); //用户-Item 列表
-		UserWeight = map;
+		//UserWeight = map;
 		update();
 	}
 	
@@ -82,29 +83,30 @@ public class DataModel{
 	}
 
 	
-	
 	public void update(){
 		try{
 			Connection conn = getConn();		
 			Statement stmt = conn.createStatement();
 			//String sql ="SELECT t1.USERID,t1.StoreID,UNIX_TIMESTAMP(t1.Time),t1.MCC  FROM data_train t1,kmeans_rfm t2 WHERE t1.USERID = t2.USERID AND (t2.TYPE=6) ORDER BY t1.USERID,t1.Time";
-			String sql ="SELECT t1.USERID,t1.StoreID,UNIX_TIMESTAMP(t1.Time),t1.MCC  FROM data_train t1 ORDER BY t1.USERID,t1.Time";
+			String sql ="SELECT t1.USERID,t1.StoreID,UNIX_TIMESTAMP(t1.Time),t1.MCC,t1.Money  FROM data_train t1 ORDER BY t1.USERID,t1.Time";
 			ResultSet rs = stmt.executeQuery(sql);//创建数据对象	   
-			long v1,v2;
-            String v4;
-            long v3;
+			long userID,itemID;
+            String mccType;
+            long timeStamp;
+            long money;
             while (rs.next()){
-                v1=getUserHashID(rs.getString(1));//传入String获取用户ID
-	            v2=getItemHashID(rs.getString(2));//传入String获取物品ID
-	            v3=rs.getLong(3);
-		        v4=rs.getString(4);
-		        if (Users_BuyListHashMap.containsKey(v1)){
-		        	ArrayList<LongPair> UserBuyList = Users_BuyListHashMap.get(v1);
-		            UserBuyList.add(new LongPair(v2, v3*1000,v4));
+            	userID=getUserHashID(rs.getString(1));//传入String获取用户ID
+            	itemID=getItemHashID(rs.getString(2));//传入String获取物品ID
+            	timeStamp=rs.getLong(3);
+	            mccType=rs.getString(4);
+	            money = rs.getLong(5);
+		        if (Users_BuyListHashMap.containsKey(userID)){
+		        	ArrayList<LongPair> UserBuyList = Users_BuyListHashMap.get(userID);
+		            UserBuyList.add(new LongPair(itemID, timeStamp*1000, mccType, money));
 		        }else{
 		            ArrayList<LongPair> UserBuyList = new ArrayList<LongPair>();
-		            UserBuyList.add(new LongPair(v2, v3*1000,v4));
-		            Users_BuyListHashMap.put(v1, UserBuyList);
+		            UserBuyList.add(new LongPair(itemID, timeStamp*1000, mccType, money));
+		            Users_BuyListHashMap.put(userID, UserBuyList);
 		        }
             }
     		rs.close();
@@ -153,13 +155,7 @@ public class DataModel{
 	}
 	
 	public double getUserWeight(long user){
-		String userID = mapUser2USER_ID(user);
-		if (UserWeight.containsKey(userID)){
-			return UserWeight.get(userID);
-		}else {
-			return 0;
-		}
-		//return 1.0;
+		return 1.0;
 	}
 	
 	public List<LongPair> getUserHistoryWithTime(String userID) {

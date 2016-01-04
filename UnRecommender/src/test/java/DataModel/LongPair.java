@@ -13,7 +13,14 @@ public class LongPair{
 		this.date = new Date(date);
 		this.mcc = mcc;
 	}
+	public LongPair(long item,long date,String mcc, long money){
+		this.item = item;
+		this.date = new Date(date);
+		this.mcc = mcc;
+		this.money = money;
+	}
 	long item; 
+	long money;
 	Date date; 
 	String mcc;
 	public long getItem(){
@@ -24,5 +31,8 @@ public class LongPair{
 	}
 	public String getMcc(){
 		return mcc;
+	}
+	public long getMoney(){
+		return money;
 	}
 }
