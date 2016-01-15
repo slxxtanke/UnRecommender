@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import DataModel.DataModel;
 import DataModel.LongPair;
@@ -16,6 +15,7 @@ public class MarkovCF {
 	private DataModel dataModel;
 	private long userSize,itemSize;
 	private HashMap<String, Float> threshold;
+	private HashMap<Long, Float> storeTrans;
 	private HashMap<Long, String> store_MccMap;
 	private HashMap<Long, SimilarityList> martix;
 	public MarkovCF(DataModel model){
@@ -25,6 +25,7 @@ public class MarkovCF {
 		threshold = new HashMap<String, Float>();		//每个MCC下店铺的平均值---阀值
 		store_MccMap = new HashMap<Long, String>();
 		martix = new HashMap<Long, SimilarityList>();
+		storeTrans = new HashMap<Long, Float>();
 		processThreshold();
 		update();
 		DataOut();
@@ -60,6 +61,7 @@ public class MarkovCF {
 		Iterator<Long> countIterator = count.getIterator();
 		while(countIterator.hasNext()){
 			long storeID1 = countIterator.next();
+			String mcc = store_MccMap.get(storeID1);
 			long Ti = count.get(storeID1);
 			if (Ti ==0 ) continue;
 			SimilarityList similarityList = new SimilarityList(storeID1);
@@ -70,7 +72,26 @@ public class MarkovCF {
 				long Tij = trans.get(storeID1, storeID2);
 				if (Tij != 0){
 					float value = (float)Tij / Ti;
-					similarityList.add(storeID2, value);
+					/*if (storeID1==storeID2)
+						value=0;*/
+					/*if (mcc.equals(store_MccMap.get(storeID2))){
+						float threhold_=threshold.get(mcc);
+						if (threhold_>0.7) threhold_=0;
+						threhold_ *=0.5;
+						float storeValue;
+						if (storeTrans.containsKey(storeID1))
+							storeValue = storeTrans.get(storeID1);
+						else storeValue =0;
+						if (storeValue<threhold_){
+							if (storeID1==storeID2){
+								value = 0;
+							}else{
+								if (storeValue != 0)
+									value = value / storeValue;
+							}
+						}
+					} //通过转移率移除掉低质量商户
+*/					similarityList.add(storeID2, value);
 				}
 			}
 			similarityList.resortAndSub();
@@ -81,6 +102,8 @@ public class MarkovCF {
 	private void  processThreshold(){
 		HashMap<String, Long> mccTotal = new HashMap<String, Long>();
 		HashMap<String, Long> mccRe = new HashMap<String, Long>(); //mcc 总次数 和 mcc自返次数
+		HashMap<Long, Long> TsI = new HashMap<Long, Long>();
+		HashMap<Long, Long> TmI = new HashMap<Long, Long>();
 		for (long i=0;i<userSize;i++){
 			ArrayList<LongPair> list = (ArrayList<LongPair>) dataModel.getUserHistoryWithTime(i);
 			if (list.size()<2) continue;
@@ -88,6 +111,7 @@ public class MarkovCF {
 				int k =j-1;
 				LongPair startPair = list.get(j);
 				String mcc = startPair.getMcc();
+				long storeID1 = startPair.getItem();
 				insertMccMap(startPair.getItem(), mcc);	//记录下每个店铺的MCC 
 				boolean flag = true;
 				do{
@@ -101,12 +125,23 @@ public class MarkovCF {
 						}else{
 							mccTotal.put(mcc, 1L);
 						}
+						if (TmI.containsKey(storeID1)){
+							TmI.put(storeID1, TmI.get(storeID1)+1);
+						}else{
+							TmI.put(storeID1, 1L);
+						}
 						if (startPair.getItem() == endPair.getItem()){
 							if (mccRe.containsKey(mcc)){
 								mccRe.put(mcc, mccRe.get(mcc)+1);
 							}else{
 								mccRe.put(mcc, 1L);
 							}
+							if (TsI.containsKey(storeID1)){
+								TsI.put(storeID1, TsI.get(storeID1)+1);
+							}else{
+								TsI.put(storeID1, 1L);
+							}
+							
 						}
 						flag = false;
 					}
@@ -129,6 +164,15 @@ public class MarkovCF {
 			//处理
 			System.out.println(mcc+"\t"+re+"\t"+total+"\t"+ (float)(1.0*re/total));
 		}
+		
+		Iterator<Long> tmIIterator = TmI.keySet().iterator();
+		while(tmIIterator.hasNext()){
+			long storeID = tmIIterator.next();
+			if (TsI.containsKey(storeID)){
+				float value = 1.0f * TsI.get(storeID)/TmI.get(storeID);
+				storeTrans.put(storeID,value);
+			}
+		}
 	}
 		
 	private void insertMccMap(Long storeID,String MccCode){
@@ -143,24 +187,25 @@ public class MarkovCF {
 			return new ArrayList<Long>();
 		}else{
 			ItemWeightList recomList = new ItemWeightList();
-			int k=-1;
-			for (int j=list.size()-1;j>0;j--){
-				k =j-1;
-				LongPair startPair = list.get(j);
+			;
+			int i=list.size()-1;//;j>0;j--){
+			int k =i;
+				LongPair startPair = list.get(i);
 				String mcc = startPair.getMcc();
 				boolean flag = true;
 				do{
-					if (k<0){
+					k--;
+					if (k<=0){
 						break;
 					}
 					LongPair endPair = list.get(k);
 					if (mcc.equals(endPair.getMcc())){
 						flag = false;
 					}
-					k--;
 				}while (flag);
-			}
-			k++;
+			//}
+			if (k<0) k=0;
+			//k=0;
 			for (int j =list.size()-1;j>=k;j--){
 				long storeID = list.get(j).getItem();
 				if (martix.containsKey(storeID)){

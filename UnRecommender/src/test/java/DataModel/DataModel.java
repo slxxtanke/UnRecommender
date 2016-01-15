@@ -158,29 +158,10 @@ public class DataModel{
 	}
 	
 	public List<LongPair> getUserHistoryWithTime(String userID) {
-		ArrayList<LongPair> list =  new ArrayList<LongPair>();
-		try{
-			Connection conn = getConn();		
-			Statement stmt = conn.createStatement();
-			String sql ="SELECT t1.StoreID,UNIX_TIMESTAMP(t1.Time),t1.MCC  FROM data_train t1 WHERE t1.USERID = '"+userID+"'  ORDER BY t1.Time DESC";
-			ResultSet rs = stmt.executeQuery(sql);//创建数据对象	   
-			long v2;
-            String v4;
-            long v3;
-            while (rs.next()){
-	            v2=getItemHashID(rs.getString(1));//传入String获取物品ID
-	            v3=rs.getLong(2);
-		        v4=rs.getString(3);
-		        list.add(new LongPair(v2, v3*1000,v4));
-            }
-    		rs.close();
-    		stmt.close();
-    		conn.close();
-   
-		}catch(Exception e){
-			e.printStackTrace();
-        }
-		return list;
+		if (Users_BuyListHashMap.containsKey(mapUser_ID2User(userID))){
+			return Users_BuyListHashMap.get(mapUser_ID2User(userID));
+		}
+		return new ArrayList<LongPair>();
 	}
 	
 
